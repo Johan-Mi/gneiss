@@ -1,0 +1,11 @@
+[package]
+name = "gneiss"
+version = "0.1.0"
+edition = "2021"
+description = "The Gneiss programming language"
+license = "Unlicense"
+repository = "https://github.com/Johan-Mi/gneiss"
+keywords = ["language", "compiler"]
+categories = ["compilers"]
+
+[dependencies]
