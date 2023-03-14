@@ -10,5 +10,7 @@ categories = ["compilers"]
 
 [dependencies]
 gumdrop = "0.8.1"
+internment = "0.7.0"
+ropey = "1.6.0"
 tree-sitter = "0.20.9"
 tree-sitter-gneiss.path = "tree-sitter-gneiss"

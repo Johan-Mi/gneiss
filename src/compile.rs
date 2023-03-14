@@ -7,7 +7,10 @@ pub fn compile(source_file: &Path) {
     let mut parser = tree_sitter::Parser::new();
     parser.set_language(language).unwrap();
     let tree = parser.parse(&source_code, None).unwrap();
-    println!("{}", tree.root_node().to_sexp());
+
+    let source_code = source_code.into();
+    let ast = crate::ast::File::parse(&tree, &source_code);
+    eprintln!("{ast:#?}");
 
     todo!();
 }

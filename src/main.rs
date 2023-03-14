@@ -1,6 +1,9 @@
 #![deny(unsafe_code)]
 
+mod ast;
 mod compile;
+mod text;
+mod typ;
 
 use gumdrop::Options;
 use std::{path::PathBuf, process::ExitCode};
