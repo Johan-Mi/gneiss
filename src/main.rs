@@ -1,3 +1,5 @@
+#![deny(unsafe_code)]
+
 use gumdrop::Options;
 
 #[derive(Options)]
