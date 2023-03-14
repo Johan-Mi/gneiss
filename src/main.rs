@@ -29,17 +29,16 @@ struct CompileCommand {
 
 fn main() -> ExitCode {
     let opts = Opts::parse_args_default_or_exit();
-    match opts.command {
-        Some(Command::Compile(CompileCommand { file })) => {
-            compile::compile(&file);
+    let Some(command) = opts.command else {
+        println!("No command provided");
+        if let Some(commands) = Opts::command_list() {
+            println!("\nAvaliable commands:\n{commands}");
         }
-        None => {
-            println!("No command provided");
-            if let Some(commands) = Opts::command_list() {
-                println!("\nAvaliable commands:\n{commands}");
-            }
-            return ExitCode::FAILURE;
-        }
+        return ExitCode::FAILURE;
+    };
+
+    match command {
+        Command::Compile(CompileCommand { file }) => compile::compile(&file),
     }
 
     ExitCode::SUCCESS
