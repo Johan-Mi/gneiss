@@ -35,6 +35,9 @@ fn main() -> ExitCode {
         }
         None => {
             println!("No command provided");
+            if let Some(commands) = Opts::command_list() {
+                println!("\nAvaliable commands:\n{commands}");
+            }
             return ExitCode::FAILURE;
         }
     }
