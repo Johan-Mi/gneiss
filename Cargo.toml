@@ -9,3 +9,4 @@ keywords = ["language", "compiler"]
 categories = ["compilers"]
 
 [dependencies]
+gumdrop = "0.8.1"

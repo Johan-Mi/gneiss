@@ -1,3 +1,11 @@
+use gumdrop::Options;
+
+#[derive(Options)]
+struct Opts {
+    #[options(help = "Print help information")]
+    help: bool,
+}
+
 fn main() {
-    println!("Hello, world!");
+    let opts = Opts::parse_args_default_or_exit();
 }
