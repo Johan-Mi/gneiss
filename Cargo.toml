@@ -10,3 +10,4 @@ categories = ["compilers"]
 
 [dependencies]
 gumdrop = "0.8.1"
+tree-sitter-gneiss.path = "tree-sitter-gneiss"
