@@ -23,7 +23,7 @@ enum Command {
 #[derive(Options)]
 struct CompileCommand {
     /// The source file to compile
-    #[options(free)]
+    #[options(free, required)]
     file: PathBuf,
 }
 
