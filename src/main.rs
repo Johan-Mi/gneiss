@@ -2,6 +2,7 @@
 
 mod ast;
 mod compile;
+mod lsp;
 mod text;
 mod typ;
 
@@ -21,6 +22,8 @@ struct Opts {
 enum Command {
     /// Compile a source file into an executable
     Compile(CompileCommand),
+    /// Run the language server
+    Lsp(LspCommand),
 }
 
 #[derive(Options)]
@@ -29,6 +32,9 @@ struct CompileCommand {
     #[options(free, required)]
     file: PathBuf,
 }
+
+#[derive(Options)]
+struct LspCommand {}
 
 fn main() -> ExitCode {
     let opts = Opts::parse_args_default_or_exit();
@@ -42,6 +48,20 @@ fn main() -> ExitCode {
 
     match command {
         Command::Compile(CompileCommand { file }) => compile::compile(&file),
+        Command::Lsp(LspCommand {}) => {
+            simplelog::WriteLogger::init(
+                log::LevelFilter::Info,
+                simplelog::Config::default(),
+                std::fs::File::create("lsp.log").unwrap(),
+            )
+            .unwrap();
+            std::panic::set_hook(Box::new(|panic_info| {
+                log::error!("{panic_info}");
+                log::error!("{}", std::backtrace::Backtrace::force_capture());
+            }));
+
+            lsp::LanguageServer::new().run();
+        }
     }
 
     ExitCode::SUCCESS
