@@ -1,3 +1,4 @@
+use crate::text::PositionEncoding;
 use lsp_server::{Connection, IoThreads, Message, Notification, Request};
 use lsp_types::{
     notification::{DidOpenTextDocument, Notification as _},
@@ -11,6 +12,7 @@ pub struct LanguageServer {
     connection: Connection,
     io_threads: IoThreads,
     parser: Parser,
+    pos_enc: PositionEncoding,
     docs: HashMap<Url, Document>,
 }
 
@@ -20,8 +22,12 @@ impl LanguageServer {
         let (id, initialize_params) = connection.initialize_start().unwrap();
         let initialize_params: InitializeParams =
             serde_json::from_value(initialize_params).unwrap();
-        let server_capabilities =
-            serde_json::to_value(ServerCapabilities::default()).unwrap();
+        let position_encoding = PositionEncoding::from(&initialize_params);
+        let server_capabilities = serde_json::to_value(ServerCapabilities {
+            position_encoding: Some(position_encoding.into()),
+            ..Default::default()
+        })
+        .unwrap();
         connection
             .initialize_finish(
                 id,
@@ -40,6 +46,7 @@ impl LanguageServer {
             connection,
             io_threads,
             parser,
+            pos_enc: position_encoding,
             docs: HashMap::new(),
         }
     }
