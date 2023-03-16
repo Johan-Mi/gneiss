@@ -80,8 +80,10 @@ impl LanguageServer {
     fn open(&mut self, uri: Url, text: String) {
         let tree = self.parser.parse(&text, None).unwrap();
         let text = Rope::from(text);
+        let ast = crate::ast::File::parse(&tree, &text);
+        log::info!("\n{:#?}", ast);
 
-        self.docs.insert(uri, Document { text, tree });
+        self.docs.insert(uri, Document { text, tree, ast });
     }
 
     fn handle_request(&self, Request { id, method, params }: Request) {
@@ -94,4 +96,5 @@ impl LanguageServer {
 struct Document {
     text: Rope,
     tree: Tree,
+    ast: crate::ast::File,
 }
