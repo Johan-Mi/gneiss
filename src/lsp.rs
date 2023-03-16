@@ -1,9 +1,12 @@
+mod completion;
+
 use crate::text::{byte_to_point, PositionEncoding};
 use lsp_server::{Connection, IoThreads, Message, Notification, Request};
 use lsp_types::{
     notification::{
         DidChangeTextDocument, DidOpenTextDocument, Notification as _,
     },
+    request::{Completion, Request as _},
     *,
 };
 use ropey::Rope;
@@ -28,6 +31,7 @@ impl LanguageServer {
         let server_capabilities = serde_json::to_value(ServerCapabilities {
             position_encoding: Some(position_encoding.into()),
             text_document_sync: Some(TextDocumentSyncKind::INCREMENTAL.into()),
+            completion_provider: Some(CompletionOptions::default()),
             ..Default::default()
         })
         .unwrap();
@@ -152,6 +156,10 @@ impl LanguageServer {
 
     fn handle_request(&self, Request { id, method, params }: Request) {
         match &*method {
+            Completion::METHOD => {
+                let params = serde_json::from_value(params).unwrap();
+                self.complete(id, &params);
+            }
             _ => log::warn!("Unhandled request method: {method:?}"),
         }
     }
