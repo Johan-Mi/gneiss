@@ -27,6 +27,7 @@ impl LanguageServer {
         let position_encoding = PositionEncoding::from(&initialize_params);
         let server_capabilities = serde_json::to_value(ServerCapabilities {
             position_encoding: Some(position_encoding.into()),
+            text_document_sync: Some(TextDocumentSyncKind::INCREMENTAL.into()),
             ..Default::default()
         })
         .unwrap();
