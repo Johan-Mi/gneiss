@@ -145,7 +145,7 @@ impl LanguageServer {
                         doc.text.chunk_at_byte(byte_offest);
                     &chunk.as_bytes()[(byte_offest - chunk_start)..]
                 },
-                Some(&old_tree),
+                Some(old_tree),
             )
             .unwrap();
 
