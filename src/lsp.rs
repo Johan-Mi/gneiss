@@ -1,9 +1,16 @@
+use std::collections::HashMap;
+
 use lsp_server::{Connection, IoThreads, Message, Notification, Request};
-use lsp_types::*;
+use lsp_types::{
+    notification::{DidOpenTextDocument, Notification as _},
+    *,
+};
+use ropey::Rope;
 
 pub struct LanguageServer {
     connection: Connection,
     io_threads: IoThreads,
+    docs: HashMap<Url, Document>,
 }
 
 impl LanguageServer {
@@ -27,6 +34,7 @@ impl LanguageServer {
         Self {
             connection,
             io_threads,
+            docs: HashMap::new(),
         }
     }
 
@@ -54,8 +62,22 @@ impl LanguageServer {
         Notification { method, params }: Notification,
     ) {
         match &*method {
+            DidOpenTextDocument::METHOD => {
+                let params: DidOpenTextDocumentParams =
+                    serde_json::from_value(params).unwrap();
+                self.open(params.text_document.uri, params.text_document.text);
+            }
             _ => log::warn!("Unhandled notification method: {method:?}"),
         }
+    }
+
+    fn open(&mut self, uri: Url, text: String) {
+        self.docs.insert(
+            uri,
+            Document {
+                text: Rope::from(text),
+            },
+        );
     }
 
     fn handle_request(&self, Request { id, method, params }: Request) {
@@ -63,4 +85,8 @@ impl LanguageServer {
             _ => log::warn!("Unhandled request method: {method:?}"),
         }
     }
+}
+
+struct Document {
+    text: Rope,
 }
