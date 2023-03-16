@@ -1,7 +1,7 @@
-use lsp_types::{InitializeParams, PositionEncodingKind};
+use lsp_types::{InitializeParams, Position, PositionEncodingKind};
 use ropey::Rope;
 use std::borrow::Cow;
-use tree_sitter::Node;
+use tree_sitter::{Node, Point};
 
 #[derive(Clone, Copy, Default)]
 pub enum PositionEncoding {
@@ -56,6 +56,52 @@ impl From<&InitializeParams> for PositionEncoding {
             .and_then(Result::ok)
             .unwrap_or_default()
     }
+}
+
+impl PositionEncoding {
+    pub fn position_to_byte(self, text: &Rope, pos: Position) -> usize {
+        text.line_to_byte(pos.line as usize)
+            + match self {
+                Self::Utf8 => pos.character as usize,
+                Self::Utf16 => {
+                    let line = text.line(pos.line as usize);
+                    line.char_to_byte(
+                        line.utf16_cu_to_char(pos.character as usize),
+                    )
+                }
+                Self::Utf32 => text
+                    .line(pos.line as usize)
+                    .char_to_byte(pos.character as usize),
+            }
+    }
+
+    pub fn position_to_point(self, text: &Rope, pos: Position) -> Point {
+        // FIXME: This gives incorrect results for characters with a width other
+        // than 1 cell. I think. The Tree-sitter documentation is not very clear
+        // about what a column is.
+        Point {
+            row: pos.line as usize,
+            column: match self {
+                Self::Utf8 => text
+                    .line(pos.line as usize)
+                    .byte_to_char(pos.character as usize),
+                Self::Utf16 => text
+                    .line(pos.line as usize)
+                    .utf16_cu_to_char(pos.character as usize),
+                Self::Utf32 => pos.character as usize,
+            },
+        }
+    }
+}
+
+pub fn byte_to_point(text: &Rope, byte: usize) -> Point {
+    // FIXME: This gives incorrect results for characters with a width other
+    // than 1 cell. I think. The Tree-sitter documentation is not very clear
+    // about what a column is.
+    let row = text.byte_to_line(byte);
+    let line_start = text.line_to_byte(row);
+    let column = text.line(row).byte_to_char(byte - line_start);
+    Point { row, column }
 }
 
 pub fn node_text<'a>(node: Node, text: &'a Rope) -> Cow<'a, str> {
