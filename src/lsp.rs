@@ -1,4 +1,4 @@
-use lsp_server::{Connection, IoThreads, Message};
+use lsp_server::{Connection, IoThreads, Message, Notification, Request};
 use lsp_types::*;
 
 pub struct LanguageServer {
@@ -30,22 +30,37 @@ impl LanguageServer {
         }
     }
 
-    pub fn run(self) {
+    pub fn run(mut self) {
         while let Ok(message) = self.connection.receiver.recv() {
             match message {
                 Message::Request(request) => {
                     if self.connection.handle_shutdown(&request).unwrap() {
                         break;
                     }
-                    log::info!("Recieved request: {request:#?}");
+                    self.handle_request(request);
                 }
                 Message::Response(_) => todo!(),
                 Message::Notification(notification) => {
-                    log::info!("Recieved notification: {notification:#?}");
+                    self.handle_notification(notification);
                 }
             }
         }
 
         self.io_threads.join().unwrap();
+    }
+
+    fn handle_notification(
+        &mut self,
+        Notification { method, params }: Notification,
+    ) {
+        match &*method {
+            _ => log::warn!("Unhandled notification method: {method:?}"),
+        }
+    }
+
+    fn handle_request(&self, Request { id, method, params }: Request) {
+        match &*method {
+            _ => log::warn!("Unhandled request method: {method:?}"),
+        }
     }
 }
