@@ -1,15 +1,16 @@
-use std::collections::HashMap;
-
 use lsp_server::{Connection, IoThreads, Message, Notification, Request};
 use lsp_types::{
     notification::{DidOpenTextDocument, Notification as _},
     *,
 };
 use ropey::Rope;
+use std::collections::HashMap;
+use tree_sitter::{Parser, Tree};
 
 pub struct LanguageServer {
     connection: Connection,
     io_threads: IoThreads,
+    parser: Parser,
     docs: HashMap<Url, Document>,
 }
 
@@ -31,9 +32,14 @@ impl LanguageServer {
             .unwrap();
         log::info!("Initialized LSP: {initialize_params:#?}");
 
+        let language = tree_sitter_gneiss::language();
+        let mut parser = Parser::new();
+        parser.set_language(language).unwrap();
+
         Self {
             connection,
             io_threads,
+            parser,
             docs: HashMap::new(),
         }
     }
@@ -72,12 +78,10 @@ impl LanguageServer {
     }
 
     fn open(&mut self, uri: Url, text: String) {
-        self.docs.insert(
-            uri,
-            Document {
-                text: Rope::from(text),
-            },
-        );
+        let tree = self.parser.parse(&text, None).unwrap();
+        let text = Rope::from(text);
+
+        self.docs.insert(uri, Document { text, tree });
     }
 
     fn handle_request(&self, Request { id, method, params }: Request) {
@@ -89,4 +93,5 @@ impl LanguageServer {
 
 struct Document {
     text: Rope,
+    tree: Tree,
 }
