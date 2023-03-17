@@ -1,4 +1,5 @@
 mod completion;
+mod hover;
 
 use crate::text::{byte_to_point, PositionEncoding};
 use lsp_server::{Connection, IoThreads, Message, Notification, Request};
@@ -6,7 +7,7 @@ use lsp_types::{
     notification::{
         DidChangeTextDocument, DidOpenTextDocument, Notification as _,
     },
-    request::{Completion, Request as _},
+    request::{Completion, HoverRequest, Request as _},
     *,
 };
 use ropey::Rope;
@@ -32,6 +33,7 @@ impl LanguageServer {
             position_encoding: Some(position_encoding.into()),
             text_document_sync: Some(TextDocumentSyncKind::INCREMENTAL.into()),
             completion_provider: Some(CompletionOptions::default()),
+            hover_provider: Some(HoverProviderCapability::Simple(true)),
             ..Default::default()
         })
         .unwrap();
@@ -159,6 +161,10 @@ impl LanguageServer {
             Completion::METHOD => {
                 let params = serde_json::from_value(params).unwrap();
                 self.complete(id, &params);
+            }
+            HoverRequest::METHOD => {
+                let params = serde_json::from_value(params).unwrap();
+                self.hover(id, &params);
             }
             _ => log::warn!("Unhandled request method: {method:?}"),
         }
