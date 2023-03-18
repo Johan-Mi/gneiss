@@ -109,7 +109,8 @@ impl LanguageServer {
 
     fn edit(&mut self, uri: Url, edits: &[TextDocumentContentChangeEvent]) {
         let doc = self.docs.get_mut(&uri).unwrap();
-        let old_tree = edits.iter().rfold(&mut doc.tree, |old_tree, edit| {
+
+        for edit in edits.iter().rev() {
             let range = edit.range.expect(
                 "edits that replace the entire document are not supported",
             );
@@ -134,10 +135,8 @@ impl LanguageServer {
                 old_end_position,
                 new_end_position: byte_to_point(&doc.text, new_end_byte),
             };
-            old_tree.edit(&edit);
-
-            old_tree
-        });
+            doc.tree.edit(&edit);
+        }
 
         doc.tree = self
             .parser
@@ -147,7 +146,7 @@ impl LanguageServer {
                         doc.text.chunk_at_byte(byte_offest);
                     &chunk.as_bytes()[(byte_offest - chunk_start)..]
                 },
-                Some(old_tree),
+                Some(&doc.tree),
             )
             .unwrap();
 
