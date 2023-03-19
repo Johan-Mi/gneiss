@@ -6,6 +6,7 @@ use lsp_server::{Connection, IoThreads, Message, Notification, Request};
 use lsp_types::{
     notification::{
         DidChangeTextDocument, DidOpenTextDocument, Notification as _,
+        PublishDiagnostics,
     },
     request::{Completion, HoverRequest, Request as _},
     *,
@@ -104,7 +105,29 @@ impl LanguageServer {
         let ast = crate::ast::File::parse(&tree, &text);
         log::info!("\n{:#?}", ast);
 
-        self.docs.insert(uri, Document { text, tree, ast });
+        let diagnostics = vec![Diagnostic {
+            range: Range::default(),
+            severity: Some(DiagnosticSeverity::INFORMATION),
+            code: None,
+            code_description: None,
+            source: None,
+            message: "This is a diagnostic".to_owned(),
+            related_information: None,
+            tags: None,
+            data: None,
+        }];
+
+        self.docs.insert(
+            uri.clone(),
+            Document {
+                text,
+                tree,
+                ast,
+                diagnostics,
+            },
+        );
+
+        self.publish_diagnostics(uri);
     }
 
     fn edit(&mut self, uri: Url, edits: &[TextDocumentContentChangeEvent]) {
@@ -153,6 +176,8 @@ impl LanguageServer {
         doc.ast = crate::ast::File::parse(&doc.tree, &doc.text);
 
         log::info!("\n{:#?}", doc.ast);
+
+        self.publish_diagnostics(uri);
     }
 
     fn handle_request(&self, Request { id, method, params }: Request) {
@@ -168,10 +193,29 @@ impl LanguageServer {
             _ => log::warn!("Unhandled request method: {method:?}"),
         }
     }
+
+    fn publish_diagnostics(&self, uri: Url) {
+        let doc = &self.docs[&uri];
+        self.connection
+            .sender
+            .send(
+                Notification::new(
+                    PublishDiagnostics::METHOD.to_owned(),
+                    PublishDiagnosticsParams {
+                        uri,
+                        diagnostics: doc.diagnostics.clone(),
+                        version: None,
+                    },
+                )
+                .into(),
+            )
+            .unwrap();
+    }
 }
 
 struct Document {
     text: Rope,
     tree: Tree,
     ast: crate::ast::File,
+    diagnostics: Vec<Diagnostic>,
 }
