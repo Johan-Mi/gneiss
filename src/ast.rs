@@ -197,14 +197,14 @@ impl FunctionArguments {
 
 #[derive(Debug)]
 enum IntLiteral {
-    U8(u8),
-    U16(u16),
-    U32(u32),
-    U64(u64),
-    I8(i8),
-    I16(i16),
-    I32(i32),
-    I64(i64),
+    U8(Result<u8>),
+    U16(Result<u16>),
+    U32(Result<u32>),
+    U64(Result<u64>),
+    I8(Result<i8>),
+    I16(Result<i16>),
+    I32(Result<i32>),
+    I64(Result<i64>),
 }
 
 impl IntLiteral {
@@ -227,18 +227,17 @@ impl IntLiteral {
             &*digits_without_separators
         };
 
-        match typ {
-            "u8" => digits.parse().map(Self::U8),
-            "u16" => digits.parse().map(Self::U16),
-            "u32" => digits.parse().map(Self::U32),
-            "u64" => digits.parse().map(Self::U64),
-            "i8" => digits.parse().map(Self::I8),
-            "i16" => digits.parse().map(Self::I16),
-            "i32" => digits.parse().map(Self::I32),
-            "i64" => digits.parse().map(Self::I64),
+        Ok(match typ {
+            "u8" => Self::U8(digits.parse().map_err(|_| SyntaxError)),
+            "u16" => Self::U16(digits.parse().map_err(|_| SyntaxError)),
+            "u32" => Self::U32(digits.parse().map_err(|_| SyntaxError)),
+            "u64" => Self::U64(digits.parse().map_err(|_| SyntaxError)),
+            "i8" => Self::I8(digits.parse().map_err(|_| SyntaxError)),
+            "i16" => Self::I16(digits.parse().map_err(|_| SyntaxError)),
+            "i32" => Self::I32(digits.parse().map_err(|_| SyntaxError)),
+            "i64" => Self::I64(digits.parse().map_err(|_| SyntaxError)),
             _ => panic!("invalid integer literal type suffix"),
-        }
-        .map_err(|_| SyntaxError)
+        })
     }
 }
 
