@@ -92,6 +92,23 @@ impl PositionEncoding {
             },
         }
     }
+
+    pub fn byte_to_position(self, text: &Rope, byte: usize) -> Position {
+        let line = text.byte_to_line(byte);
+        let byte_offset_on_line = byte - text.line_to_byte(line);
+        let character = match self {
+            Self::Utf8 => byte_offset_on_line,
+            Self::Utf16 => text
+                .line(line)
+                .byte_slice(..byte_offset_on_line)
+                .len_utf16_cu(),
+            Self::Utf32 => text.line(line).byte_to_char(byte_offset_on_line),
+        } as u32;
+        Position {
+            line: line as u32,
+            character,
+        }
+    }
 }
 
 pub fn byte_to_point(text: &Rope, byte: usize) -> Point {

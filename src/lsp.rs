@@ -1,7 +1,9 @@
 mod completion;
+mod document;
 mod hover;
 
 use crate::text::{byte_to_point, PositionEncoding};
+use document::Document;
 use lsp_server::{Connection, IoThreads, Message, Notification, Request};
 use lsp_types::{
     notification::{
@@ -13,7 +15,7 @@ use lsp_types::{
 };
 use ropey::Rope;
 use std::collections::HashMap;
-use tree_sitter::{InputEdit, Parser, Tree};
+use tree_sitter::{InputEdit, Parser};
 
 pub struct LanguageServer {
     connection: Connection,
@@ -105,25 +107,13 @@ impl LanguageServer {
         let ast = crate::ast::File::parse(&tree, &text);
         log::info!("\n{:#?}", ast);
 
-        let diagnostics = vec![Diagnostic {
-            range: Range::default(),
-            severity: Some(DiagnosticSeverity::INFORMATION),
-            code: None,
-            code_description: None,
-            source: None,
-            message: "This is a diagnostic".to_owned(),
-            related_information: None,
-            tags: None,
-            data: None,
-        }];
-
         self.docs.insert(
             uri.clone(),
             Document {
                 text,
                 tree,
                 ast,
-                diagnostics,
+                diagnostics: Vec::new(),
             },
         );
 
@@ -177,6 +167,8 @@ impl LanguageServer {
 
         log::info!("\n{:#?}", doc.ast);
 
+        doc.check_syntax_errors(self.pos_enc);
+
         self.publish_diagnostics(uri);
     }
 
@@ -211,11 +203,4 @@ impl LanguageServer {
             )
             .unwrap();
     }
-}
-
-struct Document {
-    text: Rope,
-    tree: Tree,
-    ast: crate::ast::File,
-    diagnostics: Vec<Diagnostic>,
 }
