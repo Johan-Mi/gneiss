@@ -117,7 +117,7 @@ impl LanguageServer {
             },
         );
 
-        self.publish_diagnostics(uri);
+        self.update_and_publish_diagnostics(uri);
     }
 
     fn edit(&mut self, uri: Url, edits: &[TextDocumentContentChangeEvent]) {
@@ -167,9 +167,7 @@ impl LanguageServer {
 
         log::info!("\n{:#?}", doc.ast);
 
-        doc.check_syntax_errors(self.pos_enc);
-
-        self.publish_diagnostics(uri);
+        self.update_and_publish_diagnostics(uri);
     }
 
     fn handle_request(&self, Request { id, method, params }: Request) {
@@ -186,8 +184,12 @@ impl LanguageServer {
         }
     }
 
-    fn publish_diagnostics(&self, uri: Url) {
-        let doc = &self.docs[&uri];
+    fn update_and_publish_diagnostics(&mut self, uri: Url) {
+        let doc = self.docs.get_mut(&uri).unwrap();
+        doc.diagnostics.clear();
+
+        doc.check_syntax_errors(self.pos_enc);
+
         self.connection
             .sender
             .send(
