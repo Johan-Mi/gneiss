@@ -9,7 +9,7 @@ module.exports = grammar({
   word: $ => $.identifier,
 
   rules: {
-    source_file: $ => repeat($.function_definition),
+    source_file: $ => repeat($._statement),
 
     function_definition: $ =>
       seq(
@@ -35,7 +35,12 @@ module.exports = grammar({
       ),
 
     _statement: $ =>
-      choice($.let_declaration, $.expression_statement, $.empty_statement),
+      choice(
+        $.function_definition,
+        $.let_declaration,
+        $.expression_statement,
+        $.empty_statement
+      ),
 
     empty_statement: $ => ";",
 
